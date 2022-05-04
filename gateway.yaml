@@ -84,3 +84,4 @@ spec:
         port:
           number: 9300
         host: elastic-istio-es-transport
+
