@@ -1,0 +1,86 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-elastic
+spec:
+  selector:
+    istio: ingressgateway # use istio default ingress gateway
+  servers:
+    - hosts:
+        - "elastic.eck.kaltman.co"
+      port:
+        number: 80
+        name: http-es
+        protocol: HTTP
+    - hosts:
+        - "kibana.eck.kaltman.co"
+      port:
+        number: 80
+        name: http-kb
+        protocol: HTTP
+    - hosts:
+        - "transport.eck.kaltman.co"
+      port:
+        number: 31400
+        name: transport
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-elastic
+spec:
+  hosts:
+  - "elastic.eck.kaltman.co"
+  gateways:
+  - istio-elastic
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 9200
+        host: elastic-istio-es-http
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-elastic-kb
+spec:
+  hosts:
+  - "kibana.eck.kaltman.co"
+  gateways:
+  - istio-elastic
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 5601
+        host: elastic-istio-kb-http
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-elastic-transport
+spec:
+  hosts:
+  - "transport.eck.kaltman.co"
+  gateways:
+  - istio-elastic
+  tls:
+  - match:
+    - sniHosts: ["transport.eck.kaltman.co"]
+    route:
+    - destination:
+        port:
+          number: 9300
+        host: elastic-istio-es-transport
